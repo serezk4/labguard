@@ -2,10 +2,9 @@ package com.serezk4.core.lab.cache;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonWriter;
-import com.serezk4.core.apted.util.NodeUtil;
 import com.serezk4.core.lab.model.Clazz;
 import com.serezk4.core.lab.model.Lab;
-import com.serezk4.core.lab.model.StoredTree;
+import com.serezk4.core.lab.model.StoredClazz;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,7 +38,7 @@ public final class LabStorage {
     private void saveNode(Path path, Clazz clazz) {
         Path outputPath = path.resolve(clazz.name().concat(".json"));
         try (JsonWriter jsonWriter = gson.newJsonWriter(Files.newBufferedWriter(outputPath))) {
-            gson.toJson(new StoredTree(clazz.name(), NodeUtil.parseTreeToNode(clazz.tree())), StoredTree.class, jsonWriter);
+            gson.toJson(clazz.toStoredTree(), StoredClazz.class, jsonWriter);
         } catch (IOException e) {
             System.err.println("Error saving node: " + e.getMessage());
         }
@@ -63,8 +62,8 @@ public final class LabStorage {
 
     private Optional<Clazz> loadNode(Path file) {
         try (var reader = Files.newBufferedReader(file)) {
-            StoredTree storedTree = gson.fromJson(reader, StoredTree.class);
-            return Optional.of(new Clazz(storedTree.filePath(), NodeUtil.parseNodeToTree(storedTree.node())));
+            StoredClazz storedClazz = gson.fromJson(reader, StoredClazz.class);
+            return Optional.of(storedClazz.toClazz());
         } catch (IOException e) {
             System.err.println("Error loading node: " + e.getMessage());
             return Optional.empty();

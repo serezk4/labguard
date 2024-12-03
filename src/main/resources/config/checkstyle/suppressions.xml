@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD Suppressions Configuration 1.0//EN"
+        "https://checkstyle.org/dtds/suppressions_1_0.dtd">
+
+<suppressions>
+    <!-- Suppress MethodName check for test files -->
+<!--    <suppress checks="MethodName" files=".*Test\.java"/>-->
+
+    <!-- Optional: Suppress Javadoc checks in test files -->
+<!--    <suppress checks="JavadocMethod" files=".*Test\.java"/>-->
+<!--    <suppress checks="JavadocType" files=".*Test\.java"/>-->
+<!--    <suppress checks="JavadocMissingLeadingAsterisk" files=".*Test\.java"/>-->
+<!--    <suppress checks="JavadocMissingWhitespaceAfterAsterisk" files=".*Test\.java"/>-->
+<!--    <suppress checks="JavadocTagContinuationIndentation" files=".*Test\.java"/>-->
+<!--    <suppress checks="JavadocBlockTagLocation" files=".*Test\.java"/>-->
+<!--    <suppress checks="JavadocContentLocationCheck" files=".*Test\.java"/>-->
+<!--    <suppress checks="InvalidJavadocPosition" files=".*Test\.java"/>-->
+</suppressions>

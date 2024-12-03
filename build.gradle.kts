@@ -20,6 +20,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-api:2.24.2")
     implementation("org.apache.logging.log4j:log4j-core:2.24.2")
     testImplementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.24.2")
+    implementation("com.puppycrawl.tools:checkstyle:10.20.2")
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")

@@ -10,12 +10,12 @@ import com.serezk4.core.apted.util.NodeUtil;
 import com.serezk4.core.lab.cache.LabStorage;
 import com.serezk4.core.lab.model.Clazz;
 import com.serezk4.core.lab.model.Lab;
+import com.serezk4.core.lab.linter.CheckstyleAnalyzer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.DiagnosticErrorListener;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,11 +26,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 public class Main {
-    public static final int TEST = 3;
+    public static final int TEST = 2;
     public static final String CHECK_DIRECTORY_PATH = "/Users/serezk4/labguard/core/test/1/%d".formatted(TEST);
 
     public static void main(String... args) throws IOException {
-        new Main().run("5591", 6);
+        new Main().run("412934", 6);
     }
 
     private void run(
@@ -45,9 +45,7 @@ public class Main {
 
         Lab cached = cache.loadLab(isu, labNumber);
         if (cached.clazzes() == null) {
-            List<Clazz> clazzes = source.stream()
-                    .map(file -> new Clazz(file.getFileName().toString(), parseFile(file)))
-                    .toList();
+            List<Clazz> clazzes = source.stream().map(this::parseFile).toList();
             cached = new Lab(isu, labNumber, clazzes);
             cache.save(cached);
             System.out.println("Lab saved to cache.");
@@ -72,7 +70,7 @@ public class Main {
         System.out.println("Total plagiarism cases detected: " + plagiarismCount.get());
     }
 
-    private ParseTree parseFile(Path path) {
+    private Clazz parseFile(Path path) {
         try {
             String code = Files.readString(path);
             String normalizedCode = normalize(code);
@@ -85,7 +83,9 @@ public class Main {
                 addErrorListener(new DiagnosticErrorListener());
             }};
 
-            return parser.compilationUnit();
+            List<String> pmdReport = CheckstyleAnalyzer.getInstance().analyzeCode(path);
+            System.out.println("report: ".concat(pmdReport.toString()));
+            return new Clazz(path.getFileName().toString(), parser.compilationUnit(), code, pmdReport);
         } catch (IOException e) {
             System.err.println(e.getMessage());
             return null;
