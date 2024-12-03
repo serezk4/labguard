@@ -24,14 +24,14 @@ public final class CustomParseTree implements ParseTree {
     }
 
     @Override
-    public ParseTree getChild(int i) {
-        if (i < 0 || i >= node.getChildren().size()) return null;
-        return new CustomParseTree(node.getChildren().get(i));
+    public void setParent(RuleContext ruleContext) {
+        throw new UnsupportedOperationException("CustomParseTree does not support parents.");
     }
 
     @Override
-    public void setParent(RuleContext ruleContext) {
-        throw new UnsupportedOperationException("CustomParseTree does not support parents.");
+    public ParseTree getChild(int i) {
+        if (i < 0 || i >= node.getChildren().size()) return null;
+        return new CustomParseTree(node.getChildren().get(i));
     }
 
     @Override

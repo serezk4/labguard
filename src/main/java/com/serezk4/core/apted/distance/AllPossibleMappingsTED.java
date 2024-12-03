@@ -42,33 +42,29 @@ import java.util.Iterator;
 public class AllPossibleMappingsTED<C extends CostModel, D> {
 
     /**
+     * Cost model to be used for calculating costs of edit operations.
+     */
+    private final C costModel;
+    /**
      * Indexer of the source tree.
      *
      * @see node.NodeIndexer
      */
     private NodeIndexer it1;
-
     /**
      * Indexer of the destination tree.
      *
      * @see node.NodeIndexer
      */
     private NodeIndexer it2;
-
     /**
      * The size of the source input tree.
      */
     private int size1;
-
     /**
      * The size of the destination tree.
      */
     private int size2;
-
-    /**
-     * Cost model to be used for calculating costs of edit operations.
-     */
-    private final C costModel;
 
     /**
      * Constructs the AllPossibleMappingsTED algorithm with a specific cost model.

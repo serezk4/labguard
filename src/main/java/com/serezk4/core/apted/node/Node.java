@@ -36,17 +36,16 @@ import java.util.List;
 public class Node<D> {
 
     /**
+     * Array of pointers to this node's children. The order of children is
+     * significant due to the definition of ordered trees.
+     */
+    private final List<Node<D>> children;
+    /**
      * Information associated to and stored at each node. This can be anything
      * and depends on the application, for example, string label, key-value pair,
      * list of values, etc.
      */
     private D nodeData;
-
-    /**
-     * Array of pointers to this node's children. The order of children is
-     * significant due to the definition of ordered trees.
-     */
-    private final List<Node<D>> children;
 
     /**
      * Constructs a new node with the passed node data and an empty list of

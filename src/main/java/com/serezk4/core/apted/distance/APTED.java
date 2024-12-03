@@ -74,44 +74,41 @@ public class APTED<C extends CostModel, D> {
      * Identifier of inner path type = {@value INNER};
      */
     private static final byte INNER = 2;
-
+    /**
+     * Cost model to be used for calculating costs of edit operations.
+     */
+    private final C costModel;
     /**
      * Indexer of the source tree.
      *
      * @see node.NodeIndexer
      */
     private NodeIndexer it1;
-
     /**
      * Indexer of the destination tree.
      *
      * @see node.NodeIndexer
      */
     private NodeIndexer it2;
-
     /**
      * The size of the source input tree.
      */
     private int size1;
-
     /**
      * The size of the destination tree.
      */
     private int size2;
-
     /**
      * The distance matrix [1, Sections 3.4,8.2,8.3]. Used to store intermediate
      * distances between pairs of subtrees.
      */
     private float[][] delta;
-
     /**
      * One of distance arrays to store intermediate distances in spfA.
      */
     // TODO: Verify if other spf-local arrays are initialised within spf. If yes,
     //       move q to spf to - then, an offset has to be used to access it.
     private float[] q;
-
     /**
      * Array used in the algorithm before [1]. Using it does not change the
      * complexity.
@@ -119,7 +116,6 @@ public class APTED<C extends CostModel, D> {
      * <p>TODO: Do not use it [1, Section 8.4].
      */
     private int[] fn;
-
     /**
      * Array used in the algorithm before [1]. Using it does not change the
      * complexity.
@@ -127,17 +123,11 @@ public class APTED<C extends CostModel, D> {
      * <p>TODO: Do not use it [1, Section 8.4].
      */
     private int[] ft;
-
     /**
      * Stores the number of subproblems encountered while computing the distance
      * [1, Section 10].
      */
     private long counter;
-
-    /**
-     * Cost model to be used for calculating costs of edit operations.
-     */
-    private final C costModel;
 
     /**
      * Constructs the APTED algorithm object with the specified cost model.

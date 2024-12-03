@@ -27,7 +27,6 @@ import com.serezk4.core.apted.costmodel.CostModel;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Optional;
 
 /**
  * Indexes nodes of the input tree to the algorithm that is already parsed to
@@ -66,44 +65,43 @@ public class NodeIndexer<D, C extends CostModel> {
     // Structure indices.
 
     /**
+     * Stores the size of the input tree.
+     */
+    private final int treeSize;
+    private final C costModel;
+    /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to Node object corresponding to n. Used for cost of edit operations.
      *
      * @see node.Node
      */
     public Node<D>[] preL_to_node;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the size of n's subtree (node n and all its descendants).
      */
     public int[] sizes;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the left-to-right preorder id of n's parent.
      */
     public int[] parents;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the array of n's children. Size of children array at node n equals the number
      * of n's children.
      */
     public int[][] children;
-
     /**
      * Index from left-to-right postorder id of node n (starting with {@code 0})
      * to the left-to-right postorder id of n's leftmost leaf descendant.
      */
     public int[] postL_to_lld;
-
     /**
      * Index from right-to-left postorder id of node n (starting with {@code 0})
      * to the right-to-left postorder id of n's rightmost leaf descendant.
      */
     public int[] postR_to_rld;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the left-to-right preorder id of the first leaf node to the left of n.
@@ -111,7 +109,6 @@ public class NodeIndexer<D, C extends CostModel> {
      * value {@code -1} [1, Section 8.4].
      */
     public int[] preL_to_ln;
-
     /**
      * Index from right-to-left preorder id of node n (starting with {@code 0})
      * to the right-to-left preorder id of the first leaf node to the right of n.
@@ -120,74 +117,63 @@ public class NodeIndexer<D, C extends CostModel> {
      */
     public int[] preR_to_ln;
 
+    // Traversal translation indices.
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to a boolean value that states if node n lies on the leftmost path
      * starting at n's parent [2, Algorithm 1, Lines 26,36].
      */
     public boolean[] nodeType_L;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to a boolean value that states if node n lies on the rightmost path
      * starting at n's parent input tree [2, Section 5.3, Algorithm 1, Lines 26,36].
      */
     public boolean[] nodeType_R;
-
-    // Traversal translation indices.
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the right-to-left preorder id of n.
      */
     public int[] preL_to_preR;
-
     /**
      * Index from right-to-left preorder id of node n (starting with {@code 0})
      * to the left-to-right preorder id of n.
      */
     public int[] preR_to_preL;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the left-to-right postorder id of n.
      */
     public int[] preL_to_postL;
-
     /**
      * Index from left-to-right postorder id of node n (starting with {@code 0})
      * to the left-to-right preorder id of n.
      */
     public int[] postL_to_preL;
 
+    // Cost indices.
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the right-to-left postorder id of n.
      */
     public int[] preL_to_postR;
-
     /**
      * Index from right-to-left postorder id of node n (starting with {@code 0})
      * to the left-to-right preorder id of n.
      */
     public int[] postR_to_preL;
-
-    // Cost indices.
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the cost of spf_L (single path function using the leftmost path) for
      * the subtree rooted at n [1, Section 5.2].
      */
     public int[] preL_to_kr_sum;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the cost of spf_R (single path function using the rightmost path) for
      * the subtree rooted at n [1, Section 5.2].
      */
     public int[] preL_to_rev_kr_sum;
-
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the cost of spf_A (single path function using an inner path) for the
@@ -195,70 +181,58 @@ public class NodeIndexer<D, C extends CostModel> {
      */
     public int[] preL_to_desc_sum;
 
+    // Variables holding values modified at runtime while the algorithm executes.
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the cost of deleting all nodes in the subtree rooted at n.
      */
     public float[] preL_to_sumDelCost;
 
+    // Structure single-value variables.
     /**
      * Index from left-to-right preorder id of node n (starting with {@code 0})
      * to the cost of inserting all nodes in the subtree rooted at n.
      */
     public float[] preL_to_sumInsCost;
-
-    // Variables holding values modified at runtime while the algorithm executes.
     /**
      * Stores the number of leftmost-child leaf nodes in the input tree
      * [2, Section 5.3].
      */
     public int lchl;
-
-    // Structure single-value variables.
     /**
      * Stores the number of rightmost-child leaf nodes in the input tree
      * [2, Section 5.3].
      */
     public int rchl;
+
+    // Variables used temporarily while indexing.
     /**
      * Stores the left-to-right preorder id of the current subtree's root node.
      * Used in the tree decomposition phase of APTED [1, Algorithm 1].
      */
     private int currentNode;
     /**
-     * Stores the size of the input tree.
-     */
-    private final int treeSize;
-
-    // Variables used temporarily while indexing.
-    /**
      * Temporary variable used in indexing for storing subtree size.
      */
     private int sizeTmp;
-
     /**
      * Temporary variable used in indexing for storing sum of subtree sizes
      * rooted at descendant nodes.
      */
     private int descSizesTmp;
-
     /**
      * Temporary variable used in indexing for storing sum of keyroot node sizes.
      */
     private int krSizesSumTmp;
-
     /**
      * Temporary variable used in indexing for storing sum of right-to-left
      * keyroot node sizes.
      */
     private int revkrSizesSumTmp;
-
     /**
      * Temporary variable used in indexing for storing preorder index of a node.
      */
     private int preorderTmp;
-
-    private final C costModel;
 
     /**
      * Indexes the nodes of input trees and stores the indices for quick access

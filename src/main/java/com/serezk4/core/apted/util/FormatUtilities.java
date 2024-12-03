@@ -131,7 +131,7 @@ public class FormatUtilities {
         } catch (IndexOutOfBoundsException e) {
             res = s;
             for (int i = s.length(); i < size; i++)
-                res = String.valueOf(fillChar) + res;
+                res = fillChar + res;
 
         }
         return res;
@@ -258,7 +258,7 @@ public class FormatUtilities {
     public static String commaSeparatedList(String[] list, char quote) {
         StringBuffer s = new StringBuffer();
         for (int i = 0; i < list.length; i++) {
-            s.append(String.valueOf(quote) + list[i] + quote);
+            s.append(quote + list[i] + quote);
             if (i != list.length - 1)
                 s.append(",");
         }

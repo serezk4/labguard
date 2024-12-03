@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class CustomListener implements AuditListener {
     List<String> results;
