@@ -27,6 +27,7 @@ import com.serezk4.core.apted.costmodel.CostModel;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Optional;
 
 /**
  * Indexes nodes of the input tree to the algorithm that is already parsed to

@@ -15,7 +15,7 @@ import java.util.StringJoiner;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
-public class CustomParseTree implements ParseTree {
+public final class CustomParseTree implements ParseTree {
     Node<StringNodeData> node;
 
     @Override
@@ -57,8 +57,8 @@ public class CustomParseTree implements ParseTree {
         sb.append(" (");
         StringJoiner joiner = new StringJoiner(", ");
         for (int i = 0; i < getChildCount(); i++) joiner.add(getChild(i).toStringTree());
-        sb.append(joiner).append(")");
 
+        sb.append(joiner).append(")");
         return sb.toString();
     }
 
