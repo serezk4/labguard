@@ -1,16 +1,19 @@
 package com.serezk4.core;
 
+import com.google.gson.Gson;
 import com.serezk4.core.antlr4.JavaLexer;
 import com.serezk4.core.antlr4.JavaParser;
-import com.serezk4.core.apted.costmodel.StringUnitCostModel;
+import com.serezk4.core.apted.costmodel.WeightedCostModel;
 import com.serezk4.core.apted.distance.APTED;
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
+import com.serezk4.core.apted.util.NodeUtil;
+import com.serezk4.core.lab.cache.CustomParseTree;
+import com.serezk4.core.lab.cache.LabCache;
+import com.serezk4.core.lab.model.Lab;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,14 +28,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 public class Main {
-    public static final int TEST = 1;
+    public static final int TEST = 3;
     // todo temp
-    public static final String CHECK_DIRECTORY_PATH = "/Users/serezk4/labguard/core/test/%d/target".formatted(TEST);
+    public static final String CHECK_DIRECTORY_PATH = "/Users/serezk4/labguard/core/test/1/%d".formatted(TEST);
 
     private final Map<String, Double> similarityCache = new ConcurrentHashMap<>();
+    private final Gson gson = new Gson();
 
     public static void main(String... args) throws IOException {
-        new Main().run("2281337", 6);
+        new Main().run("5591", 6);
     }
 
     private void run(
@@ -61,6 +65,7 @@ public class Main {
 
         sourceTrees.parallelStream().forEach(sourceTree -> {
             sourceTrees.parallelStream().forEach(targetTree -> {
+                if (sourceTree == targetTree) return;
                 double similarity = calculateTreeSimilarity(sourceTree, targetTree);
 
                 if (similarity > 0.7) {
@@ -84,8 +89,7 @@ public class Main {
 
         System.out.printf("Processing new file: %s%n", fileName);
         ParseTree tree = parseFile(filePath);
-        Node<StringNodeData> node = parseTreeToNode(tree);
-        cache.saveLab(isu, labNumber, fileName, node);
+        cache.save(Lab.builder().isu(isu).labNumber(labNumber).tree(tree).build());
 
         return tree;
     }
@@ -132,12 +136,10 @@ public class Main {
 
     private double calculateTreeSimilarity(ParseTree tree1, ParseTree tree2) {
         String cacheKey = tree1.getText() + "::" + tree2.getText();
-        if (similarityCache.containsKey(cacheKey)) {
-            return similarityCache.get(cacheKey);
-        }
+        if (similarityCache.containsKey(cacheKey)) return similarityCache.get(cacheKey);
 
-        Node<StringNodeData> node1 = parseTreeToNode(tree1);
-        Node<StringNodeData> node2 = parseTreeToNode(tree2);
+        Node<StringNodeData> node1 = NodeUtil.parseTreeToNode(tree1);
+        Node<StringNodeData> node2 = NodeUtil.parseTreeToNode(tree2);
 
         APTED<WeightedCostModel, StringNodeData> apted = new APTED<>(new WeightedCostModel());
         double distance = apted.computeEditDistance(node1, node2);
@@ -154,117 +156,8 @@ public class Main {
         return 1 + node.getChildren().stream().mapToInt(this::calculateSubtreeSize).sum();
     }
 
-    private Node<StringNodeData> parseTreeToNode(ParseTree tree) {
-        if (tree == null || tree.getChildCount() == 0) return null;
-
-        String type = tree.getClass().getSimpleName();
-        Node<StringNodeData> node = new Node<>(new StringNodeData(type));
-
-        for (int i = 0; i < tree.getChildCount(); i++) {
-            Node<StringNodeData> childNode = parseTreeToNode(tree.getChild(i));
-            Optional.ofNullable(childNode).ifPresent(node::addChild);
-        }
-
-        return node;
-    }
-
-    private static class WeightedCostModel extends StringUnitCostModel {
-
-        @Override
-        public float del(Node<StringNodeData> n) {
-            return n.getNodeData().getLabel().startsWith("Method") ? 2.0f : 1.0f;
-        }
-
-        @Override
-        public float ins(Node<StringNodeData> n) {
-            return n.getNodeData().getLabel().startsWith("Method") ? 2.0f : 1.0f;
-        }
-
-        @Override
-        public float ren(Node<StringNodeData> n1, Node<StringNodeData> n2) {
-            if (n1.getNodeData().getLabel().equals(n2.getNodeData().getLabel())) return 0f;
-            if (n1.getNodeData().getLabel().startsWith("Method") && n2.getNodeData().getLabel().startsWith("Method"))
-                return 0.5f;
-            return 1.0f;
-        }
-    }
-
     private ParseTree parseNodeToTree(Node<StringNodeData> node) {
         if (node == null) return null;
         return new CustomParseTree(node);
-    }
-
-    public class CustomParseTree implements ParseTree {
-        private final Node<StringNodeData> node;
-
-        public CustomParseTree(Node<StringNodeData> node) {
-            this.node = node;
-        }
-
-        @Override
-        public ParseTree getParent() {
-            return null;
-        }
-
-        @Override
-        public ParseTree getChild(int i) {
-            if (i < 0 || i >= node.getChildren().size()) return null;
-            return new CustomParseTree(node.getChildren().get(i));
-        }
-
-        @Override
-        public void setParent(RuleContext ruleContext) {
-            throw new UnsupportedOperationException("CustomParseTree does not support parents.");
-        }
-
-        @Override
-        public int getChildCount() {
-            return node.getChildren().size();
-        }
-
-        @Override
-        public String getText() {
-            return node.getNodeData().getLabel();
-        }
-
-        @Override
-        public String toStringTree(Parser parser) {
-            return "";
-        }
-
-        @Override
-        public String toStringTree() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(getText());
-            if (getChildCount() > 0) {
-                sb.append(" (");
-                for (int i = 0; i < getChildCount(); i++) {
-                    sb.append(getChild(i).toStringTree());
-                    if (i < getChildCount() - 1) sb.append(", ");
-                }
-                sb.append(")");
-            }
-            return sb.toString();
-        }
-
-        @Override
-        public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-            throw new UnsupportedOperationException("CustomParseTree does not support visitors.");
-        }
-
-        @Override
-        public ParseTree getPayload() {
-            return this;
-        }
-
-        @Override
-        public Interval getSourceInterval() {
-            return Interval.INVALID;
-        }
-
-        @Override
-        public String toString() {
-            return getText();
-        }
     }
 }
