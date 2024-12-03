@@ -131,13 +131,15 @@ public class CommandLine<C extends CostModel, P extends InputParser> {
 
     // TODO: Review if all fields are necessary.
     private final String wrongArgumentsMessage = "Wrong arguments. Try \"java -jar RTED.jar --help\" for help.";
-    private final C costModel;
-    private final P inputParser;
+
     private boolean run, custom, array, strategy, ifSwitch, sota, verbose, demaine, mapping;
     private int sotaStrategy;
     private String customStrategy, customStrategyArrayFile;
     private APTED rted;
     private double ted;
+
+    private final C costModel;
+    private final P inputParser;
     private Node t1;
     private Node t2;
 

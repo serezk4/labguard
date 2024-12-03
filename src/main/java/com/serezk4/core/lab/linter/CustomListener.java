@@ -1,17 +1,24 @@
 package com.serezk4.core.lab.linter;
 
+import com.puppycrawl.tools.checkstyle.Checker;
 import com.puppycrawl.tools.checkstyle.api.AuditEvent;
 import com.puppycrawl.tools.checkstyle.api.AuditListener;
 import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@RequiredArgsConstructor
-public class CustomListener implements AuditListener {
+@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+public class CustomListener implements AutoCloseable, AuditListener {
     List<String> results;
+    Checker checker;
+
+    public CustomListener(List<String> results, Checker checker) {
+        this.results = results;
+        this.checker = checker;
+
+        this.checker.addListener(this);
+    }
 
     @Override
     public void auditStarted(AuditEvent event) {
@@ -40,5 +47,10 @@ public class CustomListener implements AuditListener {
     @Override
     public void addException(AuditEvent event, Throwable throwable) {
         results.add("Error: " + throwable.getMessage());
+    }
+
+    @Override
+    public void close() throws Exception {
+        checker.removeListener(this);
     }
 }
