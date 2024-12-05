@@ -1,33 +1,32 @@
 package com.serezk4.core;
 
-import com.serezk4.core.antlr4.JavaLexer;
-import com.serezk4.core.antlr4.JavaParser;
-import com.serezk4.core.apted.costmodel.WeightedCostModel;
-import com.serezk4.core.apted.distance.APTED;
-import com.serezk4.core.apted.node.Node;
-import com.serezk4.core.apted.node.StringNodeData;
-import com.serezk4.core.apted.util.NodeUtil;
 import com.serezk4.core.lab.cache.LabStorage;
-import com.serezk4.core.lab.linter.CheckstyleAnalyzer;
-import com.serezk4.core.lab.model.Clazz;
+import com.serezk4.core.lab.check.Detector;
+import com.serezk4.core.lab.check.apted.AptedCheck;
+import com.serezk4.core.lab.check.graph.DataFlowGraphDetector;
+import com.serezk4.core.lab.check.metric.CodeMetricsDetector;
+import com.serezk4.core.lab.check.pattern.PatternMatchingDetector;
+import com.serezk4.core.lab.check.tokenization.TokenizationCheck;
 import com.serezk4.core.lab.model.Lab;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.DiagnosticErrorListener;
-import org.antlr.v4.runtime.atn.PredictionMode;
+import com.serezk4.core.lab.model.Plagiarist;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 public class Main {
     public static final int TEST = 2;
     public static final String CHECK_DIRECTORY_PATH = "/Users/serezk4/labguard/core/test/1/%d".formatted(TEST);
+
+    public static final List<Detector> DETECTORS = List.of(
+            new AptedCheck(),
+            new DataFlowGraphDetector(),
+            new CodeMetricsDetector(),
+            new PatternMatchingDetector(),
+            new TokenizationCheck()
+    );
 
     public static void main(String... args) throws IOException {
         new Main().run("412934", 6);
@@ -39,87 +38,71 @@ public class Main {
     ) throws IOException {
         LabStorage cache = new LabStorage();
 
-        List<Path> source = getFiles(CHECK_DIRECTORY_PATH);
-
-        System.out.printf("Source: %d Java files found.%n", source.size());
+        Path sourcePath = Path.of(CHECK_DIRECTORY_PATH);
 
         Lab cached = cache.loadLab(isu, labNumber);
         if (cached.clazzes() == null) {
-            List<Clazz> clazzes = source.stream().map(this::parseFile).toList();
-            cached = new Lab(isu, labNumber, clazzes);
+            cached = cache.load(isu, labNumber, sourcePath);
             cache.save(cached);
-            System.out.println("Lab saved to cache.");
             return;
         }
 
+        Lab targetLab = cached;
+
         AtomicLong plagiarismCount = new AtomicLong();
+        cache.loadAllByLabNumber(labNumber).parallelStream()
+                .filter(lab -> !lab.isu().equals(isu))
+                .forEach(lab -> {
+//                    List<Plagiarist> plagiarists = lab.clazzes().parallelStream()
+//                            .map(clazz -> targetLab.clazzes().parallelStream()
+//                                    .map(sourceTree -> new AbstractMap.SimpleEntry<>(sourceTree, DETECTORS.getFirst().detect(sourceTree, clazz)))
+//                                    .filter(entry -> entry.getValue() > 0.7)
+//                                    .max(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue))
+//                                    .map(entry -> new Plagiarist(clazz, entry.getKey(), entry.getValue()))
+//                                    .orElse(null))
+//                            .filter(Objects::nonNull)
+//                            .toList();
 
-        Lab finalCached = cached;
-        cached.clazzes().forEach(sourceTree -> {
-            finalCached.clazzes().forEach(targetTree -> {
-                if (sourceTree == targetTree) return;
-                double similarity = calculateTreeSimilarity(sourceTree, targetTree);
+                    List<String> result = new ArrayList<>();
+                    List<Plagiarist> plagiarists = lab.clazzes().parallelStream()
+                            .map(clazz -> targetLab.clazzes().parallelStream()
+                                    .peek(sourceTree -> {
+                                        result.add(sourceTree.name() + ":" + clazz.name() + " = " + DETECTORS.stream().map(detector -> {
+                                            double similarity = detector.detect(sourceTree, clazz);
+                                            return String.format("%-10s %.2f%s | ", detector.getClass().getSimpleName(), similarity, similarity > 0.7 ? " <---" : "");
+                                        }).collect(Collectors.joining()));
+                                    })
+                                    .map(sourceTree -> new AbstractMap.SimpleEntry<>(sourceTree, DETECTORS.getFirst().detect(sourceTree, clazz)))
+                                    .filter(entry -> entry.getValue() > 0.7)
+                                    .max(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue))
+                                    .map(entry -> new Plagiarist(clazz, entry.getKey(), entry.getValue()))
+                                    .orElse(null))
+                            .filter(Objects::nonNull)
+                            .toList();
 
-                if (similarity > 0.7) {
-                    plagiarismCount.incrementAndGet();
-                }
-            });
-        });
+                    plagiarismCount.addAndGet(plagiarists.size());
+
+                    result.forEach(System.out::println);
+
+                    if (plagiarists.isEmpty()) return;
+
+                    System.out.println("\nLab (isu) : " + lab.isu());
+                    System.out.println("Detected plagiarism cases: " + plagiarists.size());
+                    System.out.println("----------------------------------------------------------------------------------------------------------");
+                    System.out.printf("%-40s %-40s %-10s%n", "Target Class", "Source Class", "Similarity");
+                    System.out.println("----------------------------------------------------------------------------------------------------------");
+
+                    plagiarists.forEach(plagiarist -> System.out.printf(
+                            "%-40s %-40s %-10.2f%n",
+                            plagiarist.targetClazz().name(),
+                            plagiarist.plagiarizedClazz().name(),
+                            plagiarist.similarity()
+                    ));
+                });
 
         System.out.println("Plagiarism analysis completed.");
         System.out.println("Total plagiarism cases detected: " + plagiarismCount.get());
     }
 
-    private Clazz parseFile(Path path) {
-        try {
-            String code = Files.readString(path);
-            String normalizedCode = normalize(code);
 
-            CharStream charStream = CharStreams.fromString(normalizedCode);
-            JavaLexer lexer = new JavaLexer(charStream);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            JavaParser parser = new JavaParser(tokens) {{
-                getInterpreter().setPredictionMode(PredictionMode.SLL);
-                addErrorListener(new DiagnosticErrorListener());
-            }};
-
-            List<String> pmdReport = CheckstyleAnalyzer.getInstance().analyzeCode(path);
-            System.out.println("report: ".concat(pmdReport.toString()));
-            return new Clazz(path.getFileName().toString(), parser.compilationUnit(), code, pmdReport);
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-            return null;
-        }
-    }
-
-    private List<Path> getFiles(final String stringPath) throws IOException {
-        try (Stream<Path> paths = Files.walk(Paths.get(stringPath))) {
-            return paths.filter(Files::isRegularFile)
-                    .filter(_path -> _path.toString().endsWith(".java"))
-                    .toList();
-        }
-    }
-
-    private String normalize(String code) {
-        return code
-                .replaceAll("(?s)/\\*.*?\\*/|//.*", "")
-                .replaceAll("\\b\\d+\\b", "0")
-                .replaceAll("\".*?\"", "\"stringLiteral\"");
-    }
-
-    private double calculateTreeSimilarity(Clazz clazz1, Clazz clazz2) {
-        Node<StringNodeData> node1 = NodeUtil.parseTreeToNode(clazz1.tree());
-        Node<StringNodeData> node2 = NodeUtil.parseTreeToNode(clazz2.tree());
-
-        APTED<WeightedCostModel, StringNodeData> apted = new APTED<>(new WeightedCostModel());
-        double distance = apted.computeEditDistance(node1, node2);
-
-        int maxSize = Math.max(calculateSubtreeSize(node1), calculateSubtreeSize(node2));
-        return 1.0 - (distance / maxSize);
-    }
-
-    private int calculateSubtreeSize(Node<StringNodeData> node) {
-        if (node == null) return 0;
-        return 1 + node.getChildren().stream().mapToInt(this::calculateSubtreeSize).sum();
-    }
 }

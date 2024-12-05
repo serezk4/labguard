@@ -1,4 +1,4 @@
-package com.serezk4.core.lab.linter;
+package com.serezk4.core.lab.analyze.linter;
 
 import com.puppycrawl.tools.checkstyle.Checker;
 import com.puppycrawl.tools.checkstyle.api.AuditEvent;

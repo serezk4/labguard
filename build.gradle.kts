@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.serezk4"
@@ -30,17 +31,38 @@ tasks.test {
     useJUnitPlatform()
 }
 
-
 tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(configurations.runtimeClasspath.get().filter { it.exists() }.map { if (it.isDirectory) it else zipTree(it) })
+
+    // Include compiled classes and resources
+    from(sourceSets.main.get().output)
+
+    // Include runtime dependencies, excluding signature files
+    from(configurations.runtimeClasspath.get().filter { it.exists() }.map { if (it.isDirectory) it else zipTree(it) }) {
+        exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
+    }
 
     manifest {
         attributes(
-            mapOf(
-                "Class-Path" to configurations.runtimeClasspath.get().files.joinToString(" ") { it.name },
-                "Main-Class" to "com.serezk4.core.Main"
-            )
+            "Class-Path" to configurations.runtimeClasspath.get().files.joinToString(" ") { it.name },
+            "Main-Class" to "com.serezk4.core.Main"
         )
     }
+}
+
+// Use ShadowJar for creating the fat JAR
+tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveClassifier.set("") // Removes "-all" from the output JAR name
+
+    manifest {
+        attributes(
+            "Main-Class" to "com.serezk4.core.Main"
+        )
+    }
+}
+
+// Make `shadowJar` the default JAR task
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }
