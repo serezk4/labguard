@@ -2,7 +2,7 @@ package com.serezk4.core.apted.util;
 
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
-import com.serezk4.core.lab.cache.CustomParseTree;
+import com.serezk4.core.lab.storage.CustomParseTree;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Optional;

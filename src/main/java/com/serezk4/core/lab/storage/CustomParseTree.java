@@ -1,4 +1,4 @@
-package com.serezk4.core.lab.cache;
+package com.serezk4.core.lab.storage;
 
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;

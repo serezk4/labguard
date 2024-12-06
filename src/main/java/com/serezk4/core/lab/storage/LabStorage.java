@@ -1,10 +1,10 @@
-package com.serezk4.core.lab.cache;
+package com.serezk4.core.lab.storage;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonWriter;
 import com.serezk4.core.antlr4.JavaLexer;
 import com.serezk4.core.antlr4.JavaParser;
-import com.serezk4.core.lab.analyze.linter.CheckstyleAnalyzer;
+import com.serezk4.core.lab.analyze.checkstyle.CheckstyleAnalyzer;
 import com.serezk4.core.lab.model.Clazz;
 import com.serezk4.core.lab.model.Lab;
 import com.serezk4.core.lab.model.StoredClazz;

@@ -1,14 +1,12 @@
 package com.serezk4.core;
 
-import com.serezk4.core.lab.cache.LabStorage;
-import com.serezk4.core.lab.check.Detector;
+import com.serezk4.core.lab.check.Checker;
 import com.serezk4.core.lab.check.apted.AptedCheck;
-import com.serezk4.core.lab.check.graph.DataFlowGraphDetector;
-import com.serezk4.core.lab.check.metric.CodeMetricsDetector;
-import com.serezk4.core.lab.check.pattern.PatternMatchingDetector;
-import com.serezk4.core.lab.check.tokenization.TokenizationCheck;
+import com.serezk4.core.lab.check.metric.CodeMetricsChecker;
+import com.serezk4.core.lab.check.pattern.PatternMatchingChecker;
 import com.serezk4.core.lab.model.Lab;
 import com.serezk4.core.lab.model.Plagiarist;
+import com.serezk4.core.lab.storage.LabStorage;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -20,12 +18,10 @@ public class Main {
     public static final int TEST = 2;
     public static final String CHECK_DIRECTORY_PATH = "/Users/serezk4/labguard/core/test/1/%d".formatted(TEST);
 
-    public static final List<Detector> DETECTORS = List.of(
+    public static final List<Checker> CHECKERS = List.of(
             new AptedCheck(),
-            new DataFlowGraphDetector(),
-            new CodeMetricsDetector(),
-            new PatternMatchingDetector(),
-            new TokenizationCheck()
+            new CodeMetricsChecker(),
+            new PatternMatchingChecker()
     );
 
     public static void main(String... args) throws IOException {
@@ -67,12 +63,12 @@ public class Main {
                     List<Plagiarist> plagiarists = lab.clazzes().parallelStream()
                             .map(clazz -> targetLab.clazzes().parallelStream()
                                     .peek(sourceTree -> {
-                                        result.add(sourceTree.name() + ":" + clazz.name() + " = " + DETECTORS.stream().map(detector -> {
-                                            double similarity = detector.detect(sourceTree, clazz);
-                                            return String.format("%-10s %.2f%s | ", detector.getClass().getSimpleName(), similarity, similarity > 0.7 ? " <---" : "");
+                                        result.add(sourceTree.name() + ":" + clazz.name() + " = " + CHECKERS.stream().map(checker -> {
+                                            double similarity = checker.detect(sourceTree, clazz);
+                                            return String.format("%-10s %.2f%s | ", checker.getClass().getSimpleName(), similarity, similarity > 0.7 ? " <---" : "");
                                         }).collect(Collectors.joining()));
                                     })
-                                    .map(sourceTree -> new AbstractMap.SimpleEntry<>(sourceTree, DETECTORS.getFirst().detect(sourceTree, clazz)))
+                                    .map(sourceTree -> new AbstractMap.SimpleEntry<>(sourceTree, CHECKERS.getFirst().detect(sourceTree, clazz)))
                                     .filter(entry -> entry.getValue() > 0.7)
                                     .max(Comparator.comparingDouble(AbstractMap.SimpleEntry::getValue))
                                     .map(entry -> new Plagiarist(clazz, entry.getKey(), entry.getValue()))

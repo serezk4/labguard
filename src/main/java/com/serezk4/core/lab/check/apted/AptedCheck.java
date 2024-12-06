@@ -5,10 +5,10 @@ import com.serezk4.core.apted.distance.APTED;
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
 import com.serezk4.core.apted.util.NodeUtil;
-import com.serezk4.core.lab.check.Detector;
+import com.serezk4.core.lab.check.Checker;
 import com.serezk4.core.lab.model.Clazz;
 
-public class AptedCheck implements Detector {
+public class AptedCheck implements Checker {
     @Override
     public double detect(Clazz clazz1, Clazz clazz2) {
         Node<StringNodeData> node1 = NodeUtil.parseTreeToNode(clazz1.tree());

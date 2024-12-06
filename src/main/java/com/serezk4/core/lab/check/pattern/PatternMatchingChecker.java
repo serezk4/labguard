@@ -1,13 +1,13 @@
 package com.serezk4.core.lab.check.pattern;
 
-import com.serezk4.core.lab.check.Detector;
+import com.serezk4.core.lab.check.Checker;
 import com.serezk4.core.lab.model.Clazz;
 
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class PatternMatchingDetector implements Detector {
+public class PatternMatchingChecker implements Checker {
     @Override
     public double detect(Clazz source, Clazz target) {
         Pattern sourcePattern = generatePattern(source.source());
