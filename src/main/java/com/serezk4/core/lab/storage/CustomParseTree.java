@@ -11,11 +11,13 @@ import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
+import java.util.Optional;
 import java.util.StringJoiner;
 
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public final class CustomParseTree implements ParseTree {
+
     Node<StringNodeData> node;
 
     @Override
@@ -30,8 +32,10 @@ public final class CustomParseTree implements ParseTree {
 
     @Override
     public ParseTree getChild(int i) {
-        if (i < 0 || i >= node.getChildren().size()) return null;
-        return new CustomParseTree(node.getChildren().get(i));
+        return Optional.of(i)
+                .filter(index -> index >= 0 && index < node.getChildren().size())
+                .map(index -> new CustomParseTree(node.getChildren().get(index)))
+                .orElse(null);
     }
 
     @Override
@@ -51,15 +55,12 @@ public final class CustomParseTree implements ParseTree {
 
     @Override
     public String toStringTree() {
-        StringBuilder sb = new StringBuilder(getText());
-        if (getChildCount() <= 0) return sb.toString();
+        if (getChildCount() == 0) return getText();
 
-        sb.append(" (");
-        StringJoiner joiner = new StringJoiner(", ");
+        StringJoiner joiner = new StringJoiner(", ", getText() + " (", ")");
         for (int i = 0; i < getChildCount(); i++) joiner.add(getChild(i).toStringTree());
 
-        sb.append(joiner).append(")");
-        return sb.toString();
+        return joiner.toString();
     }
 
     @Override
