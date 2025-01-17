@@ -22,6 +22,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.24.2")
     testImplementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.24.2")
     implementation("com.puppycrawl.tools:checkstyle:10.20.2")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -62,7 +63,26 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     }
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(23))
+    }
+}
+
 // Make `shadowJar` the default JAR task
 tasks.build {
     dependsOn(tasks.shadowJar)
+}
+
+
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("--enable-preview")
+}
+
+tasks.withType<Test> {
+    jvmArgs("--enable-preview")
+}
+
+tasks.withType<JavaExec> {
+    jvmArgs("--enable-preview")
 }

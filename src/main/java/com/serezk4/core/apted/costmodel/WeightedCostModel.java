@@ -3,109 +3,82 @@ package com.serezk4.core.apted.costmodel;
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class WeightedCostModel extends StringUnitCostModel {
 
     private final Map<String, Float> baseCostCache = new ConcurrentHashMap<>();
     private final Map<String, Float> similarityCache = new ConcurrentHashMap<>();
 
-    private static final TreeMap<Integer, Float> LEVENSHTEIN_SIMILARITY_MAP = new TreeMap<>();
-
-    static {
-        for (int i = 0; i <= 128; i++) {
-            LEVENSHTEIN_SIMILARITY_MAP.put(i, i / 128.0f);
-        }
-    }
-
     @Override
     public float del(Node<StringNodeData> n) {
-        return computeCost(n);
+        return baseCostCache.computeIfAbsent(n.getNodeData().getLabel(), this::computeBaseCost);
     }
 
     @Override
     public float ins(Node<StringNodeData> n) {
-        return computeCost(n);
+        return baseCostCache.computeIfAbsent(n.getNodeData().getLabel(), this::computeBaseCost);
     }
 
     @Override
     public float ren(Node<StringNodeData> n1, Node<StringNodeData> n2) {
-        String label1 = n1.getNodeData().getLabel();
-        String label2 = n2.getNodeData().getLabel();
+        String label1 = compressLabel(n1.getNodeData().getLabel());
+        String label2 = compressLabel(n2.getNodeData().getLabel());
 
         if (label1.equals(label2)) return 0f;
 
-        float baseCost = getBaseCost(label1) + getBaseCost(label2);
-        float structurePenalty = Math.abs(n1.getChildren().size() - n2.getChildren().size()) * 0.15f;
-        float similarity = calculateSemanticSimilarity(label1, label2);
-        return baseCost + structurePenalty + (1.0f - similarity) * 3.0f;
-    }
+        float baseCost = baseCostCache.computeIfAbsent(label1, this::computeBaseCost) +
+                baseCostCache.computeIfAbsent(label2, this::computeBaseCost);
 
-    private float computeCost(Node<StringNodeData> n) {
-        String label = n.getNodeData().getLabel();
-        float baseCost = getBaseCost(label);
-        float structurePenalty = calculateStructurePenalty(n);
-        return baseCost + structurePenalty;
-    }
+        if (baseCost > 5.0f) return baseCost; // Early exit for high base costs
 
-    private float getBaseCost(String label) {
-        return baseCostCache.computeIfAbsent(label, this::computeBaseCost);
+        float structurePenalty = precomputeStructurePenalty(n1, n2);
+        float similarity = similarityCache.computeIfAbsent(label1 + "|" + label2, k -> computeSemanticSimilarity(label1, label2));
+
+        if (similarity > 0.7) return 0.1f; // Early exit for high similarity
+
+        return baseCost + structurePenalty + (1.0f - similarity) * 1.5f;
     }
 
     private float computeBaseCost(String label) {
-        return switch (label.split(" ")[0]) {
-            case "Class", "Interface" -> 4.0f;
-            case "Method", "Constructor" -> 3.5f;
-            case "Field", "Variable" -> 2.5f;
-            case "If", "Else", "Switch" -> 3.0f;
-            case "For", "While", "DoWhile" -> 2.8f;
-            case "Try", "Catch", "Finally" -> 3.2f;
-            case "Annotation" -> 1.5f;
-            case "Lambda", "FunctionalInterface" -> 2.8f;
-            case "Operator" -> 1.2f;
-            case "Return", "Throw" -> 2.5f;
-            case "Block", "Statement" -> 1.8f;
-            case "Expression" -> 2.0f;
-            case "Parameter" -> 1.8f;
+        if (label.length() < 2) return 1.0f;
+        return switch (label.substring(0, 2)) {
+            case "Cl", "In" -> 4.0f; // Class, Interface
+            case "Me", "Co" -> 3.5f; // Method, Constructor
+            case "Fi", "Va" -> 2.5f; // Field, Variable
+            case "If", "Sw" -> 3.0f; // If, Switch
+            case "Fo", "Wh", "Do" -> 2.8f; // For, While, DoWhile
+            case "Tr", "Ca" -> 3.2f; // Try, Catch, Finally
+            case "An" -> 1.5f; // Annotation
+            case "La", "Fu" -> 2.8f; // Lambda, FunctionalInterface
+            case "Op" -> 1.2f; // Operator
+            case "Re", "Th" -> 2.5f; // Return, Throw
+            case "Bl", "St" -> 1.8f; // Block, Statement
+            case "Ex" -> 2.0f; // Expression
+            case "Pa" -> 1.8f; // Parameter
             default -> 1.0f;
         };
     }
 
-    private float calculateStructurePenalty(Node<StringNodeData> n) {
-        return n.getChildren().stream()
-                .map(child -> getBaseCost(child.getNodeData().getLabel()) * 0.1f)
-                .reduce(0f, Float::sum);
+    private float precomputeStructurePenalty(Node<StringNodeData> n1, Node<StringNodeData> n2) {
+        int size1 = n1.getChildren().size();
+        int size2 = n2.getChildren().size();
+        return Math.min(size1, size2) * 0.05f;
     }
 
-    private float calculateSemanticSimilarity(String s1, String s2) {
-        String key = s1 + "|" + s2;
-        return similarityCache.computeIfAbsent(key, k -> {
-            int len1 = s1.length(), len2 = s2.length();
-            if (len1 == 0 && len2 == 0) return 1.0f;
-            if (len1 == 0 || len2 == 0) return 0.0f;
+    private float computeSemanticSimilarity(String s1, String s2) {
+        int len1 = s1.length();
+        int len2 = s2.length();
 
-            int levenshteinDist = calculateLevenshteinDistance(s1, s2);
-            return LEVENSHTEIN_SIMILARITY_MAP.floorEntry(levenshteinDist).getValue();
-        });
+        float maxLen = Math.max(len1, len2);
+        return maxLen == 0 ? 1.0f : 1.0f - (Math.abs(len1 - len2) / maxLen);
     }
 
-    private int calculateLevenshteinDistance(String s1, String s2) {
-        int len1 = s1.length(), len2 = s2.length();
-        int[][] dp = new int[2][len2 + 1];
-
-        for (int j = 0; j <= len2; j++) dp[0][j] = j;
-
-        for (int i = 1; i <= len1; i++) {
-            dp[i % 2][0] = i;
-            for (int j = 1; j <= len2; j++) {
-                dp[i % 2][j] = Math.min(Math.min(
-                                dp[(i - 1) % 2][j] + 1,
-                                dp[i % 2][j - 1] + 1),
-                        dp[(i - 1) % 2][j - 1] + (s1.charAt(i - 1) == s2.charAt(j - 1) ? 0 : 1));
-            }
-        }
-        return dp[len1 % 2][len2];
+    private String compressLabel(String label) {
+        return label.length() > 8 ? label.substring(0, 8) : label;
     }
 }
+
