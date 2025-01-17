@@ -1,7 +1,7 @@
 package com.serezk4.core.lab.check.metric;
 
 import com.serezk4.core.lab.check.Checker;
-import com.serezk4.core.lab.model.Clazz;
+import com.serezk4.core.lab.model.Method;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class CodeMetricsChecker implements Checker {
 
     @Override
-    public double detect(Clazz source, Clazz target) {
+    public double detect(Method source, Method target) {
         String code1 = source.source();
         String code2 = target.source();
 

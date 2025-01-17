@@ -2,9 +2,7 @@ package com.serezk4.core;
 
 import com.serezk4.core.lab.check.Checker;
 import com.serezk4.core.lab.check.apted.AptedCheck;
-import com.serezk4.core.lab.model.Clazz;
-import com.serezk4.core.lab.model.Lab;
-import com.serezk4.core.lab.model.Plagiarist;
+import com.serezk4.core.lab.model.*;
 import com.serezk4.core.lab.storage.LabStorage;
 
 import java.io.BufferedWriter;
@@ -84,33 +82,46 @@ public class Main {
 
     private Lab loadAndCacheLab(LabStorage cache, String isu, int labNumber, Path sourcePath) throws IOException {
         Lab targetLab = cache.loadLab(isu, labNumber);
-        if (targetLab.clazzes() == null) {
-            targetLab = cache.load(isu, labNumber, sourcePath);
-            cache.save(targetLab);
-        }
+        if (targetLab.clazzes() != null) return targetLab;
+
+        System.out.println("Lab not found in cache, parsing files...");
+        targetLab = cache.load(isu, labNumber, sourcePath);
+        cache.save(targetLab);
         return targetLab;
     }
 
     private Optional<Plagiarist> findPlagiarist(Clazz clazz, Map<Integer, List<Clazz>> targetGroupedByLength) {
         int groupKey = selectGroupKey(clazz);
-        return Stream.of(groupKey - 1, groupKey, groupKey + 1)
+
+        System.out.println("analyze");
+        List<PlagiaristMethod> plagiaristMethods = Stream.of(groupKey - 1, groupKey, groupKey + 1)
                 .filter(targetGroupedByLength::containsKey)
                 .flatMap(key -> targetGroupedByLength.get(key).stream())
-                .filter(target -> Math.abs(clazz.source().length() - target.source().length()) <= 1000)
-                .map(target -> {
-                    double similarity = detectCached(CHECKERS.getFirst(), clazz, target);
-                    System.out.println(similarity);
-                    return similarity > 0.7 ? new Plagiarist(clazz, target, similarity) : null;
-                })
-                .filter(Objects::nonNull)
-                .findFirst();
+                .flatMap(targetClazz -> compareMethods(clazz, targetClazz).stream())
+                .toList();
+
+        if (plagiaristMethods.isEmpty()) return Optional.empty();
+        return Optional.of(new Plagiarist(clazz, targetGroupedByLength.get(groupKey).getFirst(), plagiaristMethods));
+    }
+
+    private List<PlagiaristMethod> compareMethods(Clazz sourceClazz, Clazz targetClazz) {
+        return sourceClazz.methods().stream()
+                .flatMap(sourceMethod -> targetClazz.methods().stream()
+                        .map(targetMethod -> {
+                            double similarity = detectCached(CHECKERS.getFirst(), sourceMethod, targetMethod);
+                            return similarity > 0.7
+                                    ? new PlagiaristMethod(sourceMethod, targetMethod, similarity)
+                                    : null;
+                        })
+                        .filter(Objects::nonNull))
+                .toList();
     }
 
     private final Map<String, Double> similarityCache = new ConcurrentHashMap<>();
 
-    private double detectCached(Checker checker, Clazz source, Clazz target) {
-        String key = source.hashCode() + ":" + target.hashCode();
-        return similarityCache.computeIfAbsent(key, _ -> checker.detect(source, target));
+    private double detectCached(Checker checker, Method sourceMethod, Method targetMethod) {
+        String key = sourceMethod.hashCode() + ":" + targetMethod.hashCode();
+        return similarityCache.computeIfAbsent(key, _ -> checker.detect(sourceMethod, targetMethod));
     }
 
     private int selectGroupKey(Clazz clazz) {

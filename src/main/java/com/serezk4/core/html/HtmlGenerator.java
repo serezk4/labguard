@@ -3,6 +3,7 @@ package com.serezk4.core.html;
 import com.serezk4.core.lab.model.Clazz;
 import com.serezk4.core.lab.model.Lab;
 import com.serezk4.core.lab.model.Plagiarist;
+import com.serezk4.core.lab.model.PlagiaristMethod;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -94,15 +95,15 @@ public class HtmlGenerator {
 
             for (int i = 0; i < plagiarists.size(); i++) {
                 Plagiarist plagiarist = plagiarists.get(i);
-                String rowClass = plagiarist.similarity() > 0.7 ? "class=\"highlight\"" : "";
+//                String rowClass = plagiarist.similarity() > 0.7 ? "class=\"highlight\"" : "";
                 String comparisonId = "comparison-" + otherIsu + "-" + i;
 
                 htmlBuilder.append(String.format(
                         "<tr %s><td>%s</td><td>%s</td><td>%.2f</td><td><span class=\"toggle-button\" onclick=\"toggleVisibility('%s')\">Show Comparison</span></td></tr>",
-                        rowClass,
+                        "class=\"highlight\"", // todo
                         plagiarist.targetClazz().name(),
                         plagiarist.plagiarizedClazz().name(),
-                        plagiarist.similarity(),
+                        plagiarist.plagiaristMethodList().stream().mapToDouble(PlagiaristMethod::similarity).sum(),
                         comparisonId
                 ));
 

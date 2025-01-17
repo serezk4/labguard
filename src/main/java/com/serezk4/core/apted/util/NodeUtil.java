@@ -2,8 +2,11 @@ package com.serezk4.core.apted.util;
 
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
-import com.serezk4.core.lab.storage.CustomParseTree;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 import java.util.Optional;
 
@@ -24,6 +27,6 @@ public class NodeUtil {
 
     public static ParseTree parseNodeToTree(Node<StringNodeData> node) {
         if (node == null) return null;
-        return new CustomParseTree(node);
+        return null;
     }
 }

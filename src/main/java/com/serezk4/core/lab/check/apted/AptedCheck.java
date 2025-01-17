@@ -4,25 +4,25 @@ import com.serezk4.core.apted.costmodel.WeightedCostModel;
 import com.serezk4.core.apted.distance.APTED;
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
-import com.serezk4.core.apted.util.NodeUtil;
 import com.serezk4.core.lab.check.Checker;
-import com.serezk4.core.lab.model.Clazz;
+import com.serezk4.core.lab.model.Method;
 
 public class AptedCheck implements Checker {
+
     @Override
-    public double detect(Clazz clazz1, Clazz clazz2) {
-        Node<StringNodeData> node1 = NodeUtil.parseTreeToNode(clazz1.tree());
-        Node<StringNodeData> node2 = NodeUtil.parseTreeToNode(clazz2.tree());
-
+    public double detect(Method source, Method target) {
         APTED<WeightedCostModel, StringNodeData> apted = new APTED<>(new WeightedCostModel());
-        double distance = apted.computeEditDistance(node1, node2);
-        int maxSize = Math.max(calculateSubtreeSize(node1), calculateSubtreeSize(node2));
 
-        return 1.0 - (distance / maxSize);
+        return 1.0 - (apted.computeEditDistance(source.treeStructure(), target.treeStructure()) / Math.max(
+                calculateSubtreeSize(source.treeStructure()),
+                calculateSubtreeSize(target.treeStructure())
+        ));
     }
 
     public static int calculateSubtreeSize(Node<StringNodeData> node) {
         if (node == null) return 0;
-        return 1 + node.getChildren().stream().mapToInt(AptedCheck::calculateSubtreeSize).sum();
+        return 1 + node.getChildren().parallelStream()
+                .mapToInt(AptedCheck::calculateSubtreeSize)
+                .sum();
     }
 }

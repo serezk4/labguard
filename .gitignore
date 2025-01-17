@@ -12,6 +12,9 @@
 .idea/**/dictionaries
 .idea/**/shelf
 
+lab_cache
+*.html
+
 .idea
 
 # AWS User-specific

@@ -9,11 +9,13 @@ import com.serezk4.core.lab.analyze.checkstyle.CheckstyleAnalyzer;
 import com.serezk4.core.lab.model.Clazz;
 import com.serezk4.core.lab.model.Lab;
 import com.serezk4.core.lab.model.StoredClazz;
+import com.serezk4.core.lab.storage.adapter.ParseTreeAdapter;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.DiagnosticErrorListener;
 import org.antlr.v4.runtime.atn.PredictionMode;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +36,7 @@ public final class LabStorage {
 
     private final Gson gson = new GsonBuilder()
             .setStrictness(Strictness.LENIENT)
+            .registerTypeAdapter(ParseTree.class, new ParseTreeAdapter())
             .create();
     private final Map<Path, Clazz> parsedFileCache = new ConcurrentHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -97,7 +100,6 @@ public final class LabStorage {
                 CommonTokenStream tokens = new CommonTokenStream(lexer);
                 JavaParser parser = new JavaParser(tokens) {{
                     getInterpreter().setPredictionMode(PredictionMode.SLL);
-                    addErrorListener(new DiagnosticErrorListener());
                 }};
 
                 List<String> pmdReport = CheckstyleAnalyzer.getInstance().analyzeCode(p);

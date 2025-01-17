@@ -1,7 +1,7 @@
 package com.serezk4.core.lab.check.pattern;
 
 import com.serezk4.core.lab.check.Checker;
-import com.serezk4.core.lab.model.Clazz;
+import com.serezk4.core.lab.model.Method;
 
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 public class PatternMatchingChecker implements Checker {
     @Override
-    public double detect(Clazz source, Clazz target) {
+    public double detect(Method source, Method target) {
         Pattern sourcePattern = generatePattern(source.source());
         Pattern targetPattern = generatePattern(target.source());
 
