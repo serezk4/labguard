@@ -51,10 +51,11 @@ public class HtmlGenerator {
      * </ul>
      * The report is saved as {@code plagiarism_report.html} in the current directory.
      * </p>
+     *  @param isu       The ISU identifier of the student whose lab is being analyzed.
      *
-     * @param isu       The ISU identifier of the student whose lab is being analyzed.
      * @param labNumber The lab number being analyzed.
      * @param labs      A list of {@link Lab} objects representing all available labs.
+     * @param targetLab
      * @param results   A map where the key is another student's ISU identifier, and the value is a list of
      *                  {@link Plagiarist} objects representing detected plagiarism cases.
      */
@@ -62,6 +63,7 @@ public class HtmlGenerator {
             final String isu,
             final int labNumber,
             final List<Lab> labs,
+            final Lab targetLab,
             final Map<String, List<Plagiarist>> results
     ) {
         StringBuilder htmlBuilder = new StringBuilder();
@@ -107,18 +109,13 @@ public class HtmlGenerator {
 
         // Checkstyle Warnings Section
         htmlBuilder.append("<h2>Checkstyle Warnings</h2>");
-        labs.stream().filter(l -> l.isu().equals(isu) && l.labNumber() == labNumber).forEach(
-                lab -> lab.clazzes().forEach(clazz -> {
-                    htmlBuilder.append(String.format("<h3>Class: %s</h3>", clazz.name()));
-                    if (clazz.checkstyle().isEmpty()) {
-                        htmlBuilder.append("<p>No warnings found.</p>");
-                        return;
-                    }
-                    htmlBuilder.append("<ul>");
-                    clazz.checkstyle().forEach(warning -> htmlBuilder.append("<li>").append(escapeHtml(warning)).append("</li>"));
-                    htmlBuilder.append("</ul>");
-                })
-        );
+        targetLab.clazzes().forEach(clazz -> {
+            if (clazz.checkstyle().isEmpty()) return;
+            htmlBuilder.append(String.format("<h3>Class: %s</h3>", clazz.name()));
+            htmlBuilder.append("<ul>");
+            clazz.checkstyle().forEach(warning -> htmlBuilder.append("<li>").append(escapeHtml(warning)).append("</li>"));
+            htmlBuilder.append("</ul>");
+        });
 
         // Plagiarism Comparisons Section
         for (Map.Entry<String, List<Plagiarist>> entry : results.entrySet()) {

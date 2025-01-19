@@ -6,6 +6,7 @@ import com.serezk4.core.lab.model.Clazz;
 import com.serezk4.core.lab.model.Lab;
 import com.serezk4.core.lab.model.Plagiarist;
 import com.serezk4.core.lab.storage.LabStorage;
+import com.serezk4.core.lab.util.GroupKeySelector;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -62,6 +63,11 @@ public class Main {
     private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private final BufferedWriter consoleWriter = new BufferedWriter(new OutputStreamWriter(System.out));
+    private final GroupKeySelector groupKeySelector = new GroupKeySelector(
+            0,
+            120 * 500,
+            120 * 50
+    );
 
     /**
      * Main method that initializes the application and validates input arguments.
@@ -127,7 +133,7 @@ public class Main {
 
         final Map<String, List<Plagiarist>> results = new ConcurrentHashMap<>();
         final Map<Integer, List<Clazz>> targetGroupedByLength = targetLab.clazzes().stream()
-                .collect(Collectors.groupingBy(this::selectGroupKey));
+                .collect(Collectors.groupingBy(groupKeySelector::selectGroupKey));
 
         CompletableFuture.allOf(labs.stream().map(lab -> CompletableFuture.runAsync(() -> {
             List<Plagiarist> plagiarists = lab.clazzes().stream()
@@ -138,7 +144,7 @@ public class Main {
             results.put(lab.isu(), plagiarists);
         }, EXECUTOR)).toArray(CompletableFuture[]::new)).join();
 
-        generateHtmlReport(isu, labNumber, labs, results);
+        generateHtmlReport(isu, labNumber, labs, targetLab, results);
 
         final long endOverall = System.nanoTime();
         consoleWriter
@@ -196,15 +202,23 @@ public class Main {
             final Clazz clazz,
             final Map<Integer, List<Clazz>> targetGroupedByLength
     ) {
-        final int groupKey = selectGroupKey(clazz);
-        return Stream.of(groupKey - 1, groupKey, groupKey + 1)
-                .filter(targetGroupedByLength::containsKey)
-                .flatMap(key -> targetGroupedByLength.get(key).stream())
-                .filter(target -> Math.abs(clazz.source().length() - target.source().length()) <= 1000)
+        final int groupKey = groupKeySelector.selectGroupKey(clazz);
+        final int sourceLength = clazz.source().length();
+
+        final int lengthThreshold = 2000;
+        final double similarityThreshold = 0.61;
+
+        List<Clazz> potentialTargets = Stream.of(groupKey - 1, groupKey, groupKey + 1)
+                .map(targetGroupedByLength::get)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(target -> Math.abs(sourceLength - target.source().length()) <= lengthThreshold)
+                .toList();
+
+        return potentialTargets.parallelStream()
                 .map(target -> {
                     double similarity = detectCached(CHECKERS.getFirst(), clazz, target);
-                    System.out.println(similarity);
-                    return similarity > 0.7 ? new Plagiarist(clazz, target, similarity) : null;
+                    return similarity > similarityThreshold ? new Plagiarist(clazz, target, similarity) : null;
                 })
                 .filter(Objects::nonNull)
                 .findFirst();
@@ -236,28 +250,5 @@ public class Main {
                 String.join(":", String.valueOf(source.hashCode()), String.valueOf(target.hashCode())), _ ->
                         checker.detect(source, target)
         );
-    }
-
-    /**
-     * Determines the group key for a class based on its source code length.
-     *
-     * <p>
-     * The group key is used to categorize classes into groups of similar lengths for efficient comparison. The grouping
-     * rules are as follows:
-     * <ul>
-     *     <li>Length &lt; 500: Group 0</li>
-     *     <li>Length 500-999: Group 1</li>
-     *     <li>Length ≥ 1000: Group 2</li>
-     * </ul>
-     * </p>
-     *
-     * @param clazz The {@link Clazz} whose group key is to be determined
-     * @return an integer representing the group key
-     */
-    private int selectGroupKey(final Clazz clazz) {
-        int length = clazz.source().length();
-        if (length < 500) return 0;
-        else if (length < 1000) return 1;
-        else return 2;
     }
 }

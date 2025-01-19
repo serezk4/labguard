@@ -196,7 +196,7 @@ public final class LabStorage {
                 }};
 
                 List<String> pmdReport = CheckstyleAnalyzer.getInstance().analyzeCode(p);
-                return new Clazz(p.getFileName().toString(), parser.compilationUnit(), code, pmdReport);
+                return new Clazz(p.getFileName().toString(), parser.compilationUnit(), code, normalizedCode, pmdReport);
             } catch (IOException e) {
                 System.err.println("Error parsing file: " + e.getMessage());
                 return null;
@@ -236,7 +236,7 @@ public final class LabStorage {
      * @param code the raw Java code to normalize
      * @return the normalized Java code
      */
-    private String normalize(final String code) {
+    public static String normalize(final String code) {
         return STRING_PATTERN.matcher(
                 NUMBER_PATTERN.matcher(
                         COMMENT_PATTERN.matcher(code).replaceAll("")

@@ -1,4 +1,4 @@
-# 🛡️ Labguard 
+# 🛡️ Labguard
 
 ## Overview
 
@@ -25,13 +25,13 @@ The system relies on **Abstract Syntax Trees (ASTs)** to represent the structure
 
 #### Process:
 1. **Parsing**:
-   - **ANTLR** is used to parse Java source files into `ParseTree` objects.
-   - Each node in the `ParseTree` corresponds to a syntactic construct.
-   - Example: A `for` loop is parsed into a node with child nodes representing initialization, condition, and update.
+    - **ANTLR** is used to parse Java source files into `ParseTree` objects.
+    - Each node in the `ParseTree` corresponds to a syntactic construct.
+    - Example: A `for` loop is parsed into a node with child nodes representing initialization, condition, and update.
 
 2. **Tree Transformation**:
-   - The `ParseTree` is converted into a custom node structure (`Node<StringNodeData>`).
-   - This custom structure is optimized for tree edit distance calculations.
+    - The `ParseTree` is converted into a custom node structure (`Node<StringNodeData>`).
+    - This custom structure is optimized for tree edit distance calculations.
 
 #### Code Reference:
 - [Node Conversion](src/main/java/com/serezk4/core/apted/util/NodeUtil.java)
@@ -44,31 +44,31 @@ The core of the structural analysis is the **APTED (All Path Tree Edit Distance)
 
 #### **Key Operations**:
 1. **Insertion**:
-   - Adds a node to a tree.
-   - Example: Adding a missing statement inside a method block.
+    - Adds a node to a tree.
+    - Example: Adding a missing statement inside a method block.
 
 2. **Deletion**:
-   - Removes a node from a tree.
-   - Example: Removing an unused method.
+    - Removes a node from a tree.
+    - Example: Removing an unused method.
 
 3. **Renaming**:
-   - Changes the label of a node.
-   - Example: Renaming a variable or method.
+    - Changes the label of a node.
+    - Example: Renaming a variable or method.
 
 #### **Weighted Cost Model**:
 APTED relies on a custom cost model to determine the cost of each operation:
 - **Base Costs**:
-  - Each node type (e.g., `Class`, `Method`, `Field`) has a predefined cost.
-  - Example: Renaming a class costs more than renaming a local variable.
-  - [Implementation: WeightedCostModel.java](src/main/java/com/serezk4/core/apted/costmodel/WeightedCostModel.java)
+    - Each node type (e.g., `Class`, `Method`, `Field`) has a predefined cost.
+    - Example: Renaming a class costs more than renaming a local variable.
+    - [Implementation: WeightedCostModel.java](src/main/java/com/serezk4/core/apted/costmodel/WeightedCostModel.java)
 
 - **Structure Penalty**:
-  - Differences in the number of child nodes between two trees incur penalties.
-  - Example: A method with more statements is penalized when compared to a shorter method.
+    - Differences in the number of child nodes between two trees incur penalties.
+    - Example: A method with more statements is penalized when compared to a shorter method.
 
 - **Semantic Similarity**:
-  - Labels of nodes (e.g., variable names, method names) are compared using Levenshtein distance.
-  - High similarity reduces renaming costs.
+    - Labels of nodes (e.g., variable names, method names) are compared using Levenshtein distance.
+    - High similarity reduces renaming costs.
 
 #### Formula for Renaming Cost:
 ```plaintext
@@ -86,6 +86,11 @@ To normalize the tree edit distance:
 similarity = 1.0 - (editDistance / maxSubtreeSize)
 ```
 
+APTED source: [github repo](https://github.com/DatabaseGroup/apted)
+
+**tree edit distance value** - the minimum cost of transforming the source tree into the destination tree.
+**tree edit mapping** - a mapping between nodes that corresponds to the tree edit distance value. Nodes that are not mapped are deleted (source tree) or inserted (destination tree).
+
 #### Code References:
 - [APTED Algorithm](src/main/java/com/serezk4/core/apted/distance/APTED.java)
 - [Cost Model Implementation](src/main/java/com/serezk4/core/apted/costmodel/WeightedCostModel.java)
@@ -99,7 +104,7 @@ Semantic analysis enhances structural analysis by comparing the labels of tree n
 #### Levenshtein Distance:
 - Measures the minimum number of edits (insertions, deletions, substitutions) required to transform one string into another.
 - Example:
-  - Comparing `for` and `foreach` results in a smaller distance than comparing `for` and `while`.
+    - Comparing `for` and `foreach` results in a smaller distance than comparing `for` and `while`.
 
 #### Precomputed Similarity Map:
 - To optimize performance, Levenshtein distances are normalized and stored in a map.
@@ -130,20 +135,20 @@ Checkstyle ensures compliance with coding standards. The system integrates Check
 
 The system generates an HTML report summarizing the analysis results. The report includes:
 - **Plagiarism Comparisons**:
-  - Displays side-by-side comparisons of code.
-  - Highlights differences between classes, methods, and statements.
+    - Displays side-by-side comparisons of code.
+    - Highlights differences between classes, methods, and statements.
 
 - **Similarity Scores**:
-  - Ranges from 0.0 (no similarity) to 1.0 (identical).
+    - Ranges from 0.0 (no similarity) to 1.0 (identical).
 
 - **Checkstyle Warnings**:
-  - Lists all coding style violations.
+    - Lists all coding style violations.
 
 #### Interactive Features:
 - **Collapsible Code Blocks**:
-  - Allows toggling of detailed code comparisons.
+    - Allows toggling of detailed code comparisons.
 - **Sorting**:
-  - Enables sorting results by similarity scores.
+    - Enables sorting results by similarity scores.
 
 #### Code Reference:
 - [HTML Report Generator](src/main/java/com/serezk4/core/html/HtmlGenerator.java)
@@ -154,21 +159,21 @@ The system generates an HTML report summarizing the analysis results. The report
 
 ### Step-by-Step Process:
 1. **Input**:
-   - The system accepts:
-     - Student ISU (identifier).
-     - Lab number.
-     - Path to Java source files.
+    - The system accepts:
+        - Student ISU (identifier).
+        - Lab number.
+        - Path to Java source files.
 
 2. **Preprocessing**:
-   - Each file is parsed into a `ParseTree` using ANTLR.
-   - Trees are transformed into a custom structure for analysis.
+    - Each file is parsed into a `ParseTree` using ANTLR.
+    - Trees are transformed into a custom structure for analysis.
 
 3. **Similarity Detection**:
-   - Structural analysis is performed using the APTED algorithm.
-   - Semantic similarity is incorporated into renaming costs.
+    - Structural analysis is performed using the APTED algorithm.
+    - Semantic similarity is incorporated into renaming costs.
 
 4. **Report Generation**:
-   - Results are summarized in an interactive HTML report.
+    - Results are summarized in an interactive HTML report.
 
 ---
 

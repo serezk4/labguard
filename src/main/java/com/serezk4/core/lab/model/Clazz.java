@@ -31,6 +31,7 @@ public record Clazz(
         String name,
         ParseTree tree,
         String source,
+        String normalizedSource,
         List<String> checkstyle
 ) {
 

@@ -3,6 +3,7 @@ package com.serezk4.core.lab.model;
 import com.serezk4.core.apted.node.Node;
 import com.serezk4.core.apted.node.StringNodeData;
 import com.serezk4.core.apted.util.NodeUtil;
+import com.serezk4.core.lab.storage.LabStorage;
 
 import java.util.List;
 
@@ -64,6 +65,6 @@ public record StoredClazz(
      * @return a {@link Clazz} object representing the original parsed Java class
      */
     public Clazz toClazz() {
-        return new Clazz(filePath, NodeUtil.parseNodeToTree(node), source, checkstyle);
+        return new Clazz(filePath, NodeUtil.parseNodeToTree(node), source, LabStorage.normalize(source), checkstyle);
     }
 }
