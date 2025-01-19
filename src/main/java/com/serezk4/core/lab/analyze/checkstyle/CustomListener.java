@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
-@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CustomListener implements AutoCloseable, AuditListener {
     List<String> results;
     Checker checker;
@@ -21,19 +21,20 @@ public class CustomListener implements AutoCloseable, AuditListener {
     }
 
     @Override
-    public void auditStarted(AuditEvent event) {
+    public void auditStarted(AuditEvent ignored) {
     }
 
     @Override
-    public void auditFinished(AuditEvent event) {
+    public void auditFinished(AuditEvent ignored) {
     }
 
     @Override
-    public void fileStarted(AuditEvent event) {
+    public void fileStarted(AuditEvent ignored) {
     }
 
     @Override
-    public void fileFinished(AuditEvent event) {
+    public void fileFinished(AuditEvent ignored) {
+
     }
 
     @Override
@@ -50,7 +51,7 @@ public class CustomListener implements AutoCloseable, AuditListener {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         checker.removeListener(this);
     }
 }

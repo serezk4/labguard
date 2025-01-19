@@ -7,6 +7,7 @@ import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Deprecated(forRemoval = true)
 public class PatternMatchingChecker implements Checker {
     @Override
     public double detect(Clazz source, Clazz target) {

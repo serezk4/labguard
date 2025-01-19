@@ -10,13 +10,60 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Utility class for generating HTML reports for plagiarism detection results.
+ *
+ * <p>
+ * The {@code HtmlGenerator} class provides methods to create a detailed HTML report that includes:
+ * <ul>
+ *     <li>Checkstyle warnings for the analyzed lab.</li>
+ *     <li>Plagiarism comparisons with other labs.</li>
+ *     <li>Interactive features, such as toggling comparisons and sorting results.</li>
+ * </ul>
+ * The generated report is saved as an HTML file in the current working directory.
+ * </p>
+ *
+ * <p><b>Usage:</b></p>
+ * <pre>{@code
+ * HtmlGenerator.generateHtmlReport(isu, labNumber, labs, results);
+ * }</pre>
+ *
+ * @see Lab
+ * @see Clazz
+ * @see Plagiarist
+ * @see <a href="https://highlightjs.org/">Highlight.js</a>
+ *
+ * @author serezk4
+ * @version 1.0
+ * @since 1.0
+ */
 public class HtmlGenerator {
+
+    /**
+     * Generates an HTML report for the specified lab and plagiarism detection results.
+     *
+     * <p>
+     * The report includes:
+     * <ul>
+     *     <li>Checkstyle warnings for the target lab.</li>
+     *     <li>Plagiarism comparisons with other students' labs, highlighting similarities.</li>
+     *     <li>Code blocks and visual elements for easier analysis.</li>
+     * </ul>
+     * The report is saved as {@code plagiarism_report.html} in the current directory.
+     * </p>
+     *
+     * @param isu       The ISU identifier of the student whose lab is being analyzed.
+     * @param labNumber The lab number being analyzed.
+     * @param labs      A list of {@link Lab} objects representing all available labs.
+     * @param results   A map where the key is another student's ISU identifier, and the value is a list of
+     *                  {@link Plagiarist} objects representing detected plagiarism cases.
+     */
     public static void generateHtmlReport(
             final String isu,
             final int labNumber,
             final List<Lab> labs,
             final Map<String, List<Plagiarist>> results
-    )  {
+    ) {
         StringBuilder htmlBuilder = new StringBuilder();
         htmlBuilder.append("<!DOCTYPE html>")
                 .append("<html lang=\"en\">")
@@ -130,6 +177,17 @@ public class HtmlGenerator {
         System.out.println("HTML report generated: " + reportPath.toAbsolutePath());
     }
 
+    /**
+     * Escapes HTML special characters in the input string to prevent rendering issues or XSS attacks.
+     *
+     * <p>
+     * This method replaces characters such as {@code <}, {@code >}, {@code &}, {@code "} and {@code '} with their
+     * corresponding HTML entities.
+     * </p>
+     *
+     * @param input The raw string to escape.
+     * @return A sanitized string safe for inclusion in HTML content.
+     */
     private static String escapeHtml(String input) {
         return input.replace("&", "&amp;")
                 .replace("<", "&lt;")
@@ -138,6 +196,20 @@ public class HtmlGenerator {
                 .replace("'", "&#39;");
     }
 
+    /**
+     * Highlights differences between two code snippets.
+     *
+     * <p>
+     * This method compares two code snippets line by line and wraps added, removed, or unchanged lines
+     * in corresponding HTML elements for visual distinction. The result is suitable for embedding in an HTML document.
+     * </p>
+     *
+     * @param source1  The first code snippet to compare (typically the target class).
+     * @param source2  The second code snippet to compare (typically the plagiarized class).
+     * @param isTarget A flag indicating whether the comparison is for the target class.
+     *                 If {@code true}, differences are marked as removed; otherwise, they are marked as added.
+     * @return A string containing the highlighted differences, formatted as HTML.
+     */
     private static String highlightDifferences(String source1, String source2, boolean isTarget) {
         String[] lines1 = source1.split("\n");
         String[] lines2 = source2.split("\n");

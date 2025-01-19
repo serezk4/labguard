@@ -6,6 +6,7 @@ import com.serezk4.core.lab.model.Clazz;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Deprecated(forRemoval = true)
 public class CodeMetricsChecker implements Checker {
 
     @Override
