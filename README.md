@@ -1,4 +1,4 @@
-# Plagiarism Detection System
+# 🛡️ Labguard 
 
 ## Overview
 
@@ -169,3 +169,46 @@ The system generates an HTML report summarizing the analysis results. The report
 
 4. **Report Generation**:
    - Results are summarized in an interactive HTML report.
+
+---
+
+## Usage
+
+### 0. Requirements
+
+```shell
+❯ java -version
+openjdk version "23" 2024-09-17
+OpenJDK Runtime Environment (build 23+37-2369)
+OpenJDK 64-Bit Server VM (build 23+37-2369, mixed mode, sharing)
+
+❯ gradle -version
+
+------------------------------------------------------------
+Gradle 8.11.1
+------------------------------------------------------------
+
+Build time:    2024-11-20 16:56:46 UTC
+Revision:      481cb05a490e0ef9f8620f7873b83bd8a72e7c39
+
+Kotlin:        2.0.20
+Groovy:        3.0.22
+Ant:           Apache Ant(TM) version 1.10.14 compiled on August 16 2023
+
+```
+
+### 1. Build project
+```shell
+gradle build
+```
+
+### 2. Start
+```shell
+java --enable-preview --add-opens java.base/java.lang=ALL-UNNAMED
+ \ -XX:+UseG1GC -jar build/libs/core-1.0-SNAPSHOT.jar
+ \ 123456          # isu 
+ \ 6               # lab number
+ \ /usr/lab/source # path to lab files
+```
+
+### 3. Open HTML report
